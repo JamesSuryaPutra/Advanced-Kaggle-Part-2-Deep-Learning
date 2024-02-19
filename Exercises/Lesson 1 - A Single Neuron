@@ -1,0 +1,170 @@
+<Introduction>
+In the tutorial we learned about the building blocks of neural networks: linear units. We saw that a model of just one linear unit will fit a linear function to a dataset (equivalent to lin
+ear regression). In this exercise, you'll build a linear model and get some practice working with models in Keras. Before you get started, run the code cell below to set everything up.
+
+****************
+# Setup plotting
+import matplotlib.pyplot as plt
+
+plt.style.use('seaborn-whitegrid')
+# Set Matplotlib defaults
+plt.rc('figure', autolayout=True)
+plt.rc('axes', labelweight='bold', labelsize='large',
+       titleweight='bold', titlesize=18, titlepad=10)
+
+# Setup feedback system
+from learntools.core import binder
+binder.bind(globals())
+from learntools.deep_learning_intro.ex1 import *
+
+/tmp/ipykernel_33/3895727876.py:4: MatplotlibDeprecationWarning:
+The seaborn styles shipped by Matplotlib are deprecated since 3.6, as they no longer correspond to the styles shipped by seaborn. However, they will remain available as 'seaborn-v0_8-<
+style>'. Alternatively, directly use the seaborn API instead.
+  plt.style.use('seaborn-whitegrid')
+2024-02-19 09:59:16.082713: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory:
+Attempting to register factory for plugin cuDNN when one has already been registered
+2024-02-19 09:59:16.082822: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory:
+Attempting to register factory for plugin cuFFT when one has already been registered
+2024-02-19 09:59:16.239810: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory:
+Attempting to register factory for plugin cuBLAS when one has already been registered
+****************
+
+The Red Wine Quality dataset consists of physiochemical measurements from about 1600 Portuguese red wines. Also included is a quality rating for each wine from blind taste-tests. First,
+run the next cell to display the first few rows of this dataset.
+
+****************
+import pandas as pd
+​
+red_wine = pd.read_csv('../input/dl-course-data/red-wine.csv')
+red_wine.head()
+
+fixed acidity	volatile acidity	citric acid	residual sugar	chlorides	free sulfur dioxide	total sulfur dioxide	density	pH	sulphates	alcohol	quality
+0	7.4	0.70	0.00	1.9	0.076	11.0	34.0	0.9978	3.51	0.56	9.4	5
+1	7.8	0.88	0.00	2.6	0.098	25.0	67.0	0.9968	3.20	0.68	9.8	5
+2	7.8	0.76	0.04	2.3	0.092	15.0	54.0	0.9970	3.26	0.65	9.8	5
+3	11.2	0.28	0.56	1.9	0.075	17.0	60.0	0.9980	3.16	0.58	9.8	6
+4	7.4	0.70	0.00	1.9	0.076	11.0	34.0	0.9978	3.51	0.56	9.4	5
+****************
+
+You can get the number of rows and columns of a dataframe (or a Numpy array) with the shape attribute.
+
+****************
+red_wine.shape # (rows, columns)
+
+(1599, 12)
+****************
+
+<1st step: Input shape>
+How well can we predict a wine's perceived quality from the physiochemical measurements? The target is 'quality', and the remaining columns are the features. How would you set the input_
+shape parameter for a Keras model on this task?
+
+****************
+# YOUR CODE HERE
+input_shape = [11]
+
+# Check your answer
+q_1.check()
+
+Correct
+
+# Lines below will give you a hint or solution code
+q_1.hint()
+q_1.solution()
+
+Hint:
+Remember to only count the input features when determining input_shape. You should not count the target (the quality column).
+
+Solution:
+input_shape = [11]
+# you could also use a 1-tuple, like input_shape = (11,)
+****************
+
+<2nd step: Define a linear model>
+Now define a linear model appropriate for this task. Pay attention to how many inputs and outputs the model should have.
+
+****************
+from tensorflow import keras
+from tensorflow.keras import layers
+
+# YOUR CODE HERE
+model = keras.Sequential([
+    layers.Dense(units=1, input_shape=[11])
+])
+
+# Check your answer
+q_2.check()
+
+Correct
+
+# Lines below will give you a hint or solution code
+q_2.hint()
+q_2.solution()
+
+Hint:
+Your answer should look something like:
+model = keras.Sequential([
+    ____
+])
+
+Solution:
+from tensorflow import keras
+from tensorflow.keras import layers
+
+model = keras.Sequential([
+    layers.Dense(units=1, input_shape=[11])
+])
+****************
+
+<3rd step: Look at the weights>
+Internally, Keras represents the weights of a neural network with tensors. Tensors are basically TensorFlow's version of a Numpy array with a few differences that make them better suit
+ed to deep learning. One of the most important is that tensors are compatible with GPU and TPU) accelerators. TPUs, in fact, are designed specifically for tensor computations.
+
+A model's weights are kept in its weights attribute as a list of tensors. Get the weights of the model you defined above (if you want, you could display the weights with something like:
+print("Weights\n{}\n\nBias\n{}".format(w, b))).
+
+****************
+# YOUR CODE HERE
+w, b = model.weights
+print("Weights\n{}\n\nBias\n{}".format(w, b))
+
+# Check your answer
+q_3.check()
+
+Weights
+<tf.Variable 'dense_1/kernel:0' shape=(11, 1) dtype=float32, numpy=
+array([[-0.04698312],
+       [ 0.258242  ],
+       [ 0.43247455],
+       [-0.20990345],
+       [-0.18680596],
+       [-0.5521109 ],
+       [ 0.22022337],
+       [ 0.6434966 ],
+       [-0.63729167],
+       [-0.10820884],
+       [-0.6959591 ]], dtype=float32)>
+
+Bias
+<tf.Variable 'dense_1/bias:0' shape=(1,) dtype=float32, numpy=array([0.], dtype=float32)>
+
+Correct:
+Do you see how there's one weight for each input (and a bias)? Notice though that there doesn't seem to be any pattern to the values the weights have. Before the model is trained, the
+weights are set to random numbers (and the bias to 0.0). A neural network learns by finding better values for its weights.
+
+# Lines below will give you a hint or solution code
+q_3.hint()
+q_3.solution()
+
+Hint:
+You can get the attribute of an object using the 'dot' notation: like object.attribute.
+
+Solution:
+# Uncomment if you need the model from the previous question:
+# model = keras.Sequential([
+#     layers.Dense(units=1, input_shape=[11])
+# ])
+
+w, b = model.weights
+
+print("Weights\n{}\n\nBias\n{}".format(w, b))
+****************
