@@ -1,0 +1,643 @@
+<Introduction>
+In this exercise, you'll train a neural network on the Fuel Economy dataset and then explore the effect of the learning rate and batch size on SGD. When you're ready, run this next cell to
+set everything up!
+
+****************
+# Setup plotting
+import matplotlib.pyplot as plt
+from learntools.deep_learning_intro.dltools import animate_sgd
+plt.style.use('seaborn-whitegrid')
+# Set Matplotlib defaults
+plt.rc('figure', autolayout=True)
+plt.rc('axes', labelweight='bold', labelsize='large',
+       titleweight='bold', titlesize=18, titlepad=10)
+plt.rc('animation', html='html5')
+
+# Setup feedback system
+from learntools.core import binder
+binder.bind(globals())
+from learntools.deep_learning_intro.ex3 import *
+
+2024-02-21 10:36:06.582631: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:9261] Unable to register cuDNN factory:
+Attempting to register factory for plugin cuDNN when one has already been registered
+2024-02-21 10:36:06.582731: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:607] Unable to register cuFFT factory:
+Attempting to register factory for plugin cuFFT when one has already been registered
+2024-02-21 10:36:06.735385: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1515] Unable to register cuBLAS factory:
+Attempting to register factory for plugin cuBLAS when one has already been registered
+/tmp/ipykernel_34/3305082411.py:4: MatplotlibDeprecationWarning:
+The seaborn styles shipped by Matplotlib are deprecated since 3.6, as they no longer correspond to the styles shipped by seaborn. However, they will remain available as 'seaborn-v0_8-<
+style>'. Alternatively, directly use the seaborn API instead.
+  plt.style.use('seaborn-whitegrid')
+****************
+
+In the Fuel Economy dataset, your task is to predict the fuel economy of an automobile given features like its type of engine or the year it was made. First, load the dataset by running
+the cell below.
+
+****************
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import make_column_transformer, make_column_selector
+from sklearn.model_selection import train_test_split
+​
+fuel = pd.read_csv('../input/dl-course-data/fuel.csv')
+​
+X = fuel.copy()
+# Remove target
+y = X.pop('FE')
+​
+preprocessor = make_column_transformer(
+    (StandardScaler(),
+     make_column_selector(dtype_include=np.number)),
+    (OneHotEncoder(sparse=False),
+     make_column_selector(dtype_include=object)),
+)
+​
+X = preprocessor.fit_transform(X)
+y = np.log(y) # log transform target instead of standardizing
+​
+input_shape = [X.shape[1]]
+print("Input shape: {}".format(input_shape))
+
+Input shape: [50]
+
+/opt/conda/lib/python3.10/site-packages/sklearn/preprocessing/_encoders.py:868: FutureWarning:
+`sparse` was renamed to `sparse_output` in version 1.2 and will be removed in 1.4. `sparse_output` is ignored unless you leave `sparse` to its default value.
+  warnings.warn(
+****************
+
+Take a look at the data if you like. Our target in this case is the 'FE' column and the remaining columns are the features.
+
+****************
+# Uncomment to see original data
+fuel.head()
+# Uncomment to see processed features
+pd.DataFrame(X[:10,:]).head()
+
+1	2	3	4	5	6	7	8	9	...	40	41	42	43	44	45	46	47	48	49
+0	0.913643	1.068005	0.524148	0.685653	-0.226455	0.391659	0.43492	0.463841	-0.447941	0.0	...	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0
+1	0.913643	1.068005	0.524148	0.685653	-0.226455	0.391659	0.43492	0.463841	-0.447941	0.0	...	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0
+2	0.530594	1.068005	0.524148	0.685653	-0.226455	0.391659	0.43492	0.463841	-0.447941	0.0	...	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0
+3	0.530594	1.068005	0.524148	0.685653	-0.226455	0.391659	0.43492	0.463841	-0.447941	0.0	...	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0
+4	1.296693	2.120794	0.524148	-1.458464	-0.226455	0.391659	0.43492	0.463841	-0.447941	0.0	...	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0	0.0
+5 rows × 50 columns
+****************
+
+Run the next cell to define the network we'll use for this task.
+
+****************
+from tensorflow import keras
+from tensorflow.keras import layers
+
+model = keras.Sequential([
+    layers.Dense(128, activation='relu', input_shape=input_shape),
+    layers.Dense(128, activation='relu'),    
+    layers.Dense(64, activation='relu'),
+    layers.Dense(1),
+])
+****************
+
+<1st step: Add loss and optimizer>
+Before training the network, we need to define the loss and optimizer we'll use. Using the model's compile method, add the Adam optimizer and MAE loss.
+
+****************
+# YOUR CODE HERE
+model.compile(
+    optimizer="adam",
+    loss="mae"
+)
+
+# Check your answer
+q_1.check()
+
+Correct
+
+# Lines below will give you a hint or solution code
+q_1.hint()
+q_1.solution()
+
+Hint:
+Your code should look something like:
+model.compile(
+____,
+____,
+)
+
+Solution:
+model.compile(
+    optimizer='adam',
+    loss='mae'
+)
+****************
+
+<2nd step: Train model>
+Once you've defined the model and compiled it with a loss and optimizer, you're ready for training. Train the network for 200 epochs with a batch size of 128. The input data is X with
+target y.
+
+****************
+# YOUR CODE HERE
+history = model.fit(
+    X, y,
+    validation_data=(X, y),
+    batch_size=128,
+    epochs=200
+)
+
+# Check your answer
+q_2.check()
+
+Epoch 1/200
+9/9 [==============================] - 3s 26ms/step - loss: 2.8102 - val_loss: 1.6521
+Epoch 2/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.9618 - val_loss: 0.9278
+Epoch 3/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.5898 - val_loss: 0.5282
+Epoch 4/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.3929 - val_loss: 0.3483
+Epoch 5/200
+9/9 [==============================] - 0s 8ms/step - loss: 0.2655 - val_loss: 0.2098
+Epoch 6/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.1939 - val_loss: 0.1752
+Epoch 7/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.1607 - val_loss: 0.1397
+Epoch 8/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.1377 - val_loss: 0.1182
+Epoch 9/200
+9/9 [==============================] - 0s 8ms/step - loss: 0.1134 - val_loss: 0.1015
+Epoch 10/200
+9/9 [==============================] - 0s 8ms/step - loss: 0.1008 - val_loss: 0.0948
+Epoch 11/200
+9/9 [==============================] - 0s 8ms/step - loss: 0.0925 - val_loss: 0.0849
+Epoch 12/200
+9/9 [==============================] - 0s 8ms/step - loss: 0.0848 - val_loss: 0.0788
+Epoch 13/200
+9/9 [==============================] - 0s 8ms/step - loss: 0.0796 - val_loss: 0.0760
+Epoch 14/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0725 - val_loss: 0.0693
+Epoch 15/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0691 - val_loss: 0.0658
+Epoch 16/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0657 - val_loss: 0.0606
+Epoch 17/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0598 - val_loss: 0.0566
+Epoch 18/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0593 - val_loss: 0.0576
+Epoch 19/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0572 - val_loss: 0.0538
+Epoch 20/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0538 - val_loss: 0.0534
+Epoch 21/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0564 - val_loss: 0.0588
+Epoch 22/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0556 - val_loss: 0.0520
+Epoch 23/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0525 - val_loss: 0.0591
+Epoch 24/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0557 - val_loss: 0.0529
+Epoch 25/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0503 - val_loss: 0.0481
+Epoch 26/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0485 - val_loss: 0.0484
+Epoch 27/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0474 - val_loss: 0.0432
+Epoch 28/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0446 - val_loss: 0.0453
+Epoch 29/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0451 - val_loss: 0.0449
+Epoch 30/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0461 - val_loss: 0.0411
+Epoch 31/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0431 - val_loss: 0.0438
+Epoch 32/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0493 - val_loss: 0.0519
+Epoch 33/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0577 - val_loss: 0.0446
+Epoch 34/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0474 - val_loss: 0.0409
+Epoch 35/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0408 - val_loss: 0.0390
+Epoch 36/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0413 - val_loss: 0.0398
+Epoch 37/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0402 - val_loss: 0.0402
+Epoch 38/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0413 - val_loss: 0.0369
+Epoch 39/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0447 - val_loss: 0.0466
+Epoch 40/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0444 - val_loss: 0.0483
+Epoch 41/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0420 - val_loss: 0.0372
+Epoch 42/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0392 - val_loss: 0.0371
+Epoch 43/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0388 - val_loss: 0.0359
+Epoch 44/200
+9/9 [==============================] - 0s 8ms/step - loss: 0.0398 - val_loss: 0.0354
+Epoch 45/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0370 - val_loss: 0.0330
+Epoch 46/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0341 - val_loss: 0.0339
+Epoch 47/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0373 - val_loss: 0.0366
+Epoch 48/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0388 - val_loss: 0.0343
+Epoch 49/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0405 - val_loss: 0.0455
+Epoch 50/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0394 - val_loss: 0.0385
+Epoch 51/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0415 - val_loss: 0.0403
+Epoch 52/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0385 - val_loss: 0.0358
+Epoch 53/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0352 - val_loss: 0.0368
+Epoch 54/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0389 - val_loss: 0.0354
+Epoch 55/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0402 - val_loss: 0.0331
+Epoch 56/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0352 - val_loss: 0.0351
+Epoch 57/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0376 - val_loss: 0.0364
+Epoch 58/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0354 - val_loss: 0.0344
+Epoch 59/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0348 - val_loss: 0.0318
+Epoch 60/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0340 - val_loss: 0.0388
+Epoch 61/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0359 - val_loss: 0.0435
+Epoch 62/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0365 - val_loss: 0.0366
+Epoch 63/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0368 - val_loss: 0.0341
+Epoch 64/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0357 - val_loss: 0.0466
+Epoch 65/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0408 - val_loss: 0.0347
+Epoch 66/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0346 - val_loss: 0.0331
+Epoch 67/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0377 - val_loss: 0.0385
+Epoch 68/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0336 - val_loss: 0.0320
+Epoch 69/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0336 - val_loss: 0.0325
+Epoch 70/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0389 - val_loss: 0.0359
+Epoch 71/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0389 - val_loss: 0.0368
+Epoch 72/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0312 - val_loss: 0.0365
+Epoch 73/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0359 - val_loss: 0.0424
+Epoch 74/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0349 - val_loss: 0.0297
+Epoch 75/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0335 - val_loss: 0.0334
+Epoch 76/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0365 - val_loss: 0.0306
+Epoch 77/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0341 - val_loss: 0.0316
+Epoch 78/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0375 - val_loss: 0.0320
+Epoch 79/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0355 - val_loss: 0.0342
+Epoch 80/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0339 - val_loss: 0.0304
+Epoch 81/200
+9/9 [==============================] - 0s 8ms/step - loss: 0.0320 - val_loss: 0.0328
+Epoch 82/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0322 - val_loss: 0.0310
+Epoch 83/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0328 - val_loss: 0.0320
+Epoch 84/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0328 - val_loss: 0.0286
+Epoch 85/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0316 - val_loss: 0.0304
+Epoch 86/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0318 - val_loss: 0.0344
+Epoch 87/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0333 - val_loss: 0.0320
+Epoch 88/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0315 - val_loss: 0.0312
+Epoch 89/200
+9/9 [==============================] - 0s 10ms/step - loss: 0.0302 - val_loss: 0.0273
+Epoch 90/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0285 - val_loss: 0.0360
+Epoch 91/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0334 - val_loss: 0.0322
+Epoch 92/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0306 - val_loss: 0.0308
+Epoch 93/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0329 - val_loss: 0.0343
+Epoch 94/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0310 - val_loss: 0.0446
+Epoch 95/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0440 - val_loss: 0.0386
+Epoch 96/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0343 - val_loss: 0.0325
+Epoch 97/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0324 - val_loss: 0.0298
+Epoch 98/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0320 - val_loss: 0.0323
+Epoch 99/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0373 - val_loss: 0.0407
+Epoch 100/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0379 - val_loss: 0.0338
+Epoch 101/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0347 - val_loss: 0.0292
+Epoch 102/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0333 - val_loss: 0.0334
+Epoch 103/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0337 - val_loss: 0.0312
+Epoch 104/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0337 - val_loss: 0.0337
+Epoch 105/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0353 - val_loss: 0.0309
+Epoch 106/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0325 - val_loss: 0.0311
+Epoch 107/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0368 - val_loss: 0.0292
+Epoch 108/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0317 - val_loss: 0.0281
+Epoch 109/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0309 - val_loss: 0.0304
+Epoch 110/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0310 - val_loss: 0.0460
+Epoch 111/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0420 - val_loss: 0.0521
+Epoch 112/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0423 - val_loss: 0.0319
+Epoch 113/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0360 - val_loss: 0.0386
+Epoch 114/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0335 - val_loss: 0.0292
+Epoch 115/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0297 - val_loss: 0.0314
+Epoch 116/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0300 - val_loss: 0.0316
+Epoch 117/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0317 - val_loss: 0.0427
+Epoch 118/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0388 - val_loss: 0.0368
+Epoch 119/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0347 - val_loss: 0.0370
+Epoch 120/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0427 - val_loss: 0.0472
+Epoch 121/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0431 - val_loss: 0.0367
+Epoch 122/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0370 - val_loss: 0.0407
+Epoch 123/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0390 - val_loss: 0.0495
+Epoch 124/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0493 - val_loss: 0.0427
+Epoch 125/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0455 - val_loss: 0.0355
+Epoch 126/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0366 - val_loss: 0.0296
+Epoch 127/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0319 - val_loss: 0.0297
+Epoch 128/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0305 - val_loss: 0.0280
+Epoch 129/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0290 - val_loss: 0.0265
+Epoch 130/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0291 - val_loss: 0.0276
+Epoch 131/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0300 - val_loss: 0.0275
+Epoch 132/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0272 - val_loss: 0.0299
+Epoch 133/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0280 - val_loss: 0.0268
+Epoch 134/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0290 - val_loss: 0.0327
+Epoch 135/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0291 - val_loss: 0.0282
+Epoch 136/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0327 - val_loss: 0.0311
+Epoch 137/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0299 - val_loss: 0.0245
+Epoch 138/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0305 - val_loss: 0.0375
+Epoch 139/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0349 - val_loss: 0.0341
+Epoch 140/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0354 - val_loss: 0.0406
+Epoch 141/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0408 - val_loss: 0.0548
+Epoch 142/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0494 - val_loss: 0.0377
+Epoch 143/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0383 - val_loss: 0.0343
+Epoch 144/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0334 - val_loss: 0.0290
+Epoch 145/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0338 - val_loss: 0.0376
+Epoch 146/200
+9/9 [==============================] - 0s 8ms/step - loss: 0.0375 - val_loss: 0.0355
+Epoch 147/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0319 - val_loss: 0.0337
+Epoch 148/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0293 - val_loss: 0.0288
+Epoch 149/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0275 - val_loss: 0.0286
+Epoch 150/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0343 - val_loss: 0.0295
+Epoch 151/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0299 - val_loss: 0.0301
+Epoch 152/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0277 - val_loss: 0.0268
+Epoch 153/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0275 - val_loss: 0.0243
+Epoch 154/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0264 - val_loss: 0.0287
+Epoch 155/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0311 - val_loss: 0.0376
+Epoch 156/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0353 - val_loss: 0.0294
+Epoch 157/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0277 - val_loss: 0.0269
+Epoch 158/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0276 - val_loss: 0.0253
+Epoch 159/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0278 - val_loss: 0.0270
+Epoch 160/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0353 - val_loss: 0.0390
+Epoch 161/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0357 - val_loss: 0.0282
+Epoch 162/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0288 - val_loss: 0.0282
+Epoch 163/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0253 - val_loss: 0.0318
+Epoch 164/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0304 - val_loss: 0.0274
+Epoch 165/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0324 - val_loss: 0.0378
+Epoch 166/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0304 - val_loss: 0.0300
+Epoch 167/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0313 - val_loss: 0.0299
+Epoch 168/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0293 - val_loss: 0.0293
+Epoch 169/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0358 - val_loss: 0.0455
+Epoch 170/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0374 - val_loss: 0.0452
+Epoch 171/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0432 - val_loss: 0.0449
+Epoch 172/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0367 - val_loss: 0.0427
+Epoch 173/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0441 - val_loss: 0.0538
+Epoch 174/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0480 - val_loss: 0.0363
+Epoch 175/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0388 - val_loss: 0.0276
+Epoch 176/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0345 - val_loss: 0.0281
+Epoch 177/200
+9/9 [==============================] - 0s 8ms/step - loss: 0.0311 - val_loss: 0.0307
+Epoch 178/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0294 - val_loss: 0.0259
+Epoch 179/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0300 - val_loss: 0.0319
+Epoch 180/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0293 - val_loss: 0.0318
+Epoch 181/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0326 - val_loss: 0.0368
+Epoch 182/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0302 - val_loss: 0.0268
+Epoch 183/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0272 - val_loss: 0.0253
+Epoch 184/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0262 - val_loss: 0.0285
+Epoch 185/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0267 - val_loss: 0.0266
+Epoch 186/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0300 - val_loss: 0.0296
+Epoch 187/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0282 - val_loss: 0.0264
+Epoch 188/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0302 - val_loss: 0.0273
+Epoch 189/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0289 - val_loss: 0.0266
+Epoch 190/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0275 - val_loss: 0.0259
+Epoch 191/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0294 - val_loss: 0.0281
+Epoch 192/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0382 - val_loss: 0.0306
+Epoch 193/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0387 - val_loss: 0.0293
+Epoch 194/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0364 - val_loss: 0.0292
+Epoch 195/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0327 - val_loss: 0.0291
+Epoch 196/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0316 - val_loss: 0.0311
+Epoch 197/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0313 - val_loss: 0.0303
+Epoch 198/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0308 - val_loss: 0.0270
+Epoch 199/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0331 - val_loss: 0.0322
+Epoch 200/200
+9/9 [==============================] - 0s 7ms/step - loss: 0.0323 - val_loss: 0.0261
+
+Correct
+
+# Lines below will give you a hint or solution code
+q_2.hint()
+q_2.solution()
+
+Hint:
+Your solution should look something like:
+history = model.fit(
+    ____, # training data
+    ____, # batch size
+    ____, # epochs
+)
+
+Solution:
+history = model.fit(
+    X, y,
+    batch_size=128,
+    epochs=200
+)
+****************
+
+The last step is to look at the loss curves and evaluate the training. Run the cell below to get a plot of the training loss.
+
+****************
+import pandas as pd
+​
+history_df = pd.DataFrame(history.history)
+# Start the plot at epoch 5. You can change this to get a different view.
+history_df.loc[5:, ['loss']].plot();
+****************
+
+<3rd step: Evaluate training>
+If you trained the model longer, would you expect the loss to decrease further?
+
+****************
+# View the solution (Run this cell to receive credit!)
+q_3.check()
+
+Correct:
+This depends on how the loss has evolved during training: if the learning curves have levelled off, there won't usually be any advantage to training for additional epochs. Conversely,
+if the loss appears to still be decreasing, then training for longer could be advantageous.
+****************
+
+With the learning rate and the batch size, you have some control over:
+1} How long it takes to train a model
+2} How noisy the learning curves are
+3} How small the loss becomes
+
+To get a better understanding of these two parameters, we'll look at the linear model, our ppsimplest neural network. Having only a single weight and a bias, it's easier to see what
+effect a change of parameter has.
+
+The next cell will generate an animation like the one in the tutorial. Change the values for learning_rate, batch_size, and num_examples (how many data points) and then run the cell
+(it may take a moment or two). Try the following combinations, or try some of your own:
+learning_rate	batch_size	num_examples
+0.05	32	256
+0.05	2	256
+0.05	128	256
+0.02	32	256
+0.2	32	256
+1.0	32	256
+0.9	4096	8192
+0.99	4096	8192
+
+****************
+# YOUR CODE HERE: Experiment with different values for the learning rate, batch size, and number of examples
+learning_rate = 0.05
+batch_size = 32
+num_examples = 256
+
+animate_sgd(
+    learning_rate=learning_rate,
+    batch_size=batch_size,
+    num_examples=num_examples,
+    # You can also change these, if you like
+    steps=50, # total training steps (batches seen)
+    true_w=3.0, # the slope of the data
+    true_b=2.0, # the bias of the data
+)
+****************
+
+<4th step: Learning rate and batch size>
+What effect did changing these parameters have? After you've thought about it, run the cell below for some discussion.
+
+****************
+# View the solution (Run this cell to receive credit!)
+q_4.check()
+
+Correct:
+1} You probably saw that smaller batch sizes gave noisier weight updates and loss curves. This is because each batch is a small sample of data and smaller samples tend to give noisier
+estimates. Smaller batches can have an "averaging" effect though which can be beneficial.
+2} Smaller learning rates make the updates smaller and the training takes longer to converge. Large learning rates can speed up training, but don't "settle in" to a minimum as well.
+When the learning rate is too large, the training can fail completely.
+****************
